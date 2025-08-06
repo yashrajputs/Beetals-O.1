@@ -124,43 +124,70 @@ def display_analysis_interface():
     st.success(f"📄 Document loaded: {st.session_state.processed_document}")
     st.info(f"📊 {len(st.session_state.structured_clauses)} policy clauses indexed")
     
-    # Query input
-    st.subheader("Enter Your Claim Query")
+    # Query input section
+    st.subheader("Enter Your Claim Queries")
     
-    col1, col2 = st.columns([3, 1])
+    # Initialize query list in session state
+    if 'query_list' not in st.session_state:
+        st.session_state.query_list = [""]
     
-    with col1:
-        query = st.text_area(
-            "Describe your insurance claim:",
-            placeholder="Example: 50M, used air ambulance, distance traveled 300 km, seeking 100% reimbursement",
-            height=100
-        )
+    # Multiple query input
+    st.markdown("**Add multiple queries (one per line):**")
+    queries_text = st.text_area(
+        "Describe your insurance claims:",
+        value="\n".join(st.session_state.query_list) if st.session_state.query_list[0] else "",
+        placeholder="Example:\n50M, used air ambulance, distance traveled 300 km, seeking 100% reimbursement\n35F, pre-existing diabetes, hospitalization for 5 days\n28M, outpatient surgery, day care procedure claim",
+        height=150,
+        help="Enter one claim per line. You can analyze multiple claims at once."
+    )
+    
+    # Parse queries
+    if queries_text.strip():
+        query_list = [q.strip() for q in queries_text.split('\n') if q.strip()]
+        st.session_state.query_list = query_list
+    else:
+        st.session_state.query_list = [""]
+    
+    # Quick examples section
+    col1, col2 = st.columns([2, 1])
     
     with col2:
         st.markdown("### Quick Examples")
         example_queries = [
             "50M, used air ambulance, distance traveled 300 km, seeking 100% reimbursement",
-            "35F, pre-existing diabetes, hospitalization for 5 days",
+            "35F, pre-existing diabetes, hospitalization for 5 days", 
             "28M, outpatient surgery, day care procedure claim",
             "45F, maternity expenses, normal delivery claim"
         ]
         
+        if st.button("Load All Examples", key="load_examples"):
+            st.session_state.query_list = example_queries
+            st.rerun()
+        
         for i, example in enumerate(example_queries):
-            if st.button(f"Example {i+1}", key=f"example_{i}", help=example):
-                st.session_state.example_query = example
+            if st.button(f"Add Example {i+1}", key=f"example_{i}", help=example):
+                if st.session_state.query_list == [""]:
+                    st.session_state.query_list = [example]
+                else:
+                    st.session_state.query_list.append(example)
                 st.rerun()
     
-    # Use example query if selected
-    if hasattr(st.session_state, 'example_query'):
-        query = st.session_state.example_query
-        delattr(st.session_state, 'example_query')
-    
-    # Analysis button
-    if st.button("🔍 Analyze Claim", type="primary", disabled=not query.strip()):
-        analyze_claim(query)
+    with col1:
+        # Analysis options
+        st.markdown("### Analysis Options")
+        output_format = st.radio(
+            "Choose output format:",
+            ["Structured Display", "JSON Output"],
+            help="Structured Display shows results in a user-friendly format. JSON Output provides raw structured data."
+        )
+        
+        # Analysis button
+        valid_queries = [q for q in st.session_state.query_list if q.strip()]
+        if st.button("🔍 Analyze Claims", type="primary", disabled=not valid_queries):
+            analyze_multiple_claims(valid_queries, output_format)
 
 def analyze_claim(query):
-    """Analyze the insurance claim"""
+    """Analyze a single insurance claim"""
     with st.spinner("🔍 Analyzing your claim..."):
         try:
             # Get relevant clauses
@@ -185,6 +212,45 @@ def analyze_claim(query):
             
         except Exception as e:
             st.error(f"❌ Error analyzing claim: {str(e)}")
+
+def analyze_multiple_claims(queries, output_format):
+    """Analyze multiple insurance claims"""
+    results = []
+    
+    with st.spinner(f"🔍 Analyzing {len(queries)} claims..."):
+        try:
+            for i, query in enumerate(queries):
+                # Update progress
+                progress = (i + 1) / len(queries)
+                st.progress(progress, f"Analyzing claim {i+1} of {len(queries)}")
+                
+                # Get relevant clauses
+                relevant_clauses = get_top_similar_clauses(
+                    query=query,
+                    indexed_data=st.session_state.structured_clauses,
+                    index=st.session_state.vector_index,
+                    model=st.session_state.model,
+                    k=5
+                )
+                
+                # Get AI analysis
+                analysis_result = analyze_claim_with_ai(query, relevant_clauses)
+                
+                # Store result
+                results.append({
+                    "query": query,
+                    "relevant_clauses": relevant_clauses,
+                    "analysis": analysis_result
+                })
+            
+            # Display results based on format choice
+            if output_format == "JSON Output":
+                display_json_results(results)
+            else:
+                display_multiple_analysis_results(results)
+                
+        except Exception as e:
+            st.error(f"❌ Error analyzing claims: {str(e)}")
 
 def display_analysis_results(query, relevant_clauses, analysis_result):
     """Display the analysis results"""
@@ -251,6 +317,180 @@ def display_analysis_results(query, relevant_clauses, analysis_result):
     # Reset button
     if st.button("🔄 New Analysis"):
         st.rerun()
+
+def display_multiple_analysis_results(results):
+    """Display results for multiple claims in structured format"""
+    st.markdown("---")
+    st.header("📋 Multiple Claims Analysis Results")
+    
+    # Summary
+    st.subheader("📊 Summary")
+    total_claims = len(results)
+    approved_claims = 0
+    partial_claims = 0
+    denied_claims = 0
+    
+    for result in results:
+        analysis = result.get("analysis", "")
+        if "yes" in analysis.lower():
+            approved_claims += 1
+        elif "partial" in analysis.lower():
+            partial_claims += 1
+        elif "no" in analysis.lower():
+            denied_claims += 1
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Claims", total_claims)
+    with col2:
+        st.metric("Approved", approved_claims, delta=None if approved_claims == 0 else f"{approved_claims}/{total_claims}")
+    with col3:
+        st.metric("Partial", partial_claims, delta=None if partial_claims == 0 else f"{partial_claims}/{total_claims}")
+    with col4:
+        st.metric("Denied", denied_claims, delta=None if denied_claims == 0 else f"{denied_claims}/{total_claims}")
+    
+    # Individual results
+    st.subheader("🔍 Individual Claim Results")
+    
+    for i, result in enumerate(results, 1):
+        with st.expander(f"Claim {i}: {result['query'][:50]}..."):
+            display_single_result(result, i)
+    
+    # Reset button
+    if st.button("🔄 New Analysis", key="new_multiple_analysis"):
+        st.rerun()
+
+def display_json_results(results):
+    """Display results in JSON format"""
+    st.markdown("---")
+    st.header("📋 Claims Analysis Results (JSON Format)")
+    
+    # Prepare JSON output
+    json_results = []
+    for i, result in enumerate(results, 1):
+        try:
+            # Try to parse the AI response as JSON
+            analysis_text = result.get("analysis", "")
+            if isinstance(analysis_text, str):
+                json_start = analysis_text.find('{')
+                json_end = analysis_text.rfind('}') + 1
+                if json_start != -1 and json_end != 0:
+                    analysis_json = json.loads(analysis_text[json_start:json_end])
+                else:
+                    analysis_json = {"raw_response": analysis_text}
+            else:
+                analysis_json = analysis_text
+            
+            claim_result = {
+                "claim_id": i,
+                "query": result["query"],
+                "analysis_result": analysis_json,
+                "relevant_clauses": [
+                    {
+                        "title": clause["title"],
+                        "page_number": clause["page_number"],
+                        "text": clause["text"][:200] + "..." if len(clause["text"]) > 200 else clause["text"]
+                    }
+                    for clause in result["relevant_clauses"]
+                ]
+            }
+            json_results.append(claim_result)
+            
+        except json.JSONDecodeError:
+            # Fallback for non-JSON responses
+            claim_result = {
+                "claim_id": i,
+                "query": result["query"],
+                "analysis_result": {"raw_response": result.get("analysis", "")},
+                "relevant_clauses": [
+                    {
+                        "title": clause["title"],
+                        "page_number": clause["page_number"],
+                        "text": clause["text"][:200] + "..." if len(clause["text"]) > 200 else clause["text"]
+                    }
+                    for clause in result["relevant_clauses"]
+                ]
+            }
+            json_results.append(claim_result)
+    
+    # Display JSON
+    st.json(json_results)
+    
+    # Download button
+    json_str = json.dumps(json_results, indent=2)
+    st.download_button(
+        label="📥 Download Results as JSON",
+        data=json_str,
+        file_name=f"insurance_claims_analysis_{len(results)}_claims.json",
+        mime="application/json"
+    )
+    
+    # Reset button
+    if st.button("🔄 New Analysis", key="new_json_analysis"):
+        st.rerun()
+
+def display_single_result(result, claim_number):
+    """Display a single claim result"""
+    query = result["query"]
+    relevant_clauses = result["relevant_clauses"]
+    analysis_result = result["analysis"]
+    
+    # Query recap
+    st.markdown(f"**Query {claim_number}:**")
+    st.info(query)
+    
+    # AI Analysis
+    st.markdown("**AI Coverage Analysis:**")
+    
+    if analysis_result:
+        try:
+            # Try to parse JSON response
+            if isinstance(analysis_result, str):
+                json_start = analysis_result.find('{')
+                json_end = analysis_result.rfind('}') + 1
+                if json_start != -1 and json_end != 0:
+                    json_str = analysis_result[json_start:json_end]
+                    parsed_result = json.loads(json_str)
+                else:
+                    raise ValueError("No JSON found in response")
+            else:
+                parsed_result = analysis_result
+            
+            # Display decision
+            decision = parsed_result.get('decision', 'Unknown')
+            amount = parsed_result.get('amount', 'Not specified')
+            justification = parsed_result.get('justification', 'No justification provided')
+            
+            # Decision display with colors
+            if decision.lower() == 'yes':
+                st.success(f"✅ **Coverage Decision:** {decision}")
+            elif decision.lower() == 'no':
+                st.error(f"❌ **Coverage Decision:** {decision}")
+            else:
+                st.warning(f"⚠️ **Coverage Decision:** {decision}")
+            
+            # Amount display
+            if amount and amount != 'Not specified':
+                st.info(f"💰 **Amount:** {amount}")
+            
+            # Justification
+            st.markdown("**📝 Justification:**")
+            st.write(justification)
+            
+        except (json.JSONDecodeError, ValueError):
+            # Fallback to raw response
+            st.write("**AI Response:**")
+            st.write(analysis_result)
+    else:
+        st.error("❌ No analysis result received")
+    
+    # Relevant clauses (collapsed)
+    with st.expander(f"📄 Relevant Policy Clauses ({len(relevant_clauses)} found)"):
+        for j, clause in enumerate(relevant_clauses, 1):
+            st.markdown(f"**Clause {j}: {clause['title']} (Page {clause['page_number']})**")
+            st.write(clause['text'])
+            if j < len(relevant_clauses):
+                st.markdown("---")
 
 if __name__ == "__main__":
     main()
