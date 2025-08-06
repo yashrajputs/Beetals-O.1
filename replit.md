@@ -27,8 +27,8 @@ Preferred communication style: Simple, everyday language.
 - **Structured Data Creation**: Converts raw PDF text into structured clauses with titles, content, and page references
 
 ### Search and Retrieval System
-- **Semantic Vector Search**: Uses BAAI/bge-base-en-v1.5 sentence transformer for generating text embeddings
-- **FAISS Vector Database**: Provides efficient similarity search across policy clauses
+- **TF-IDF Vector Search**: Uses scikit-learn's TfidfVectorizer for lightweight text similarity
+- **Cosine Similarity**: Efficient similarity search across policy clauses using sklearn
 - **Top-K Retrieval**: Returns most relevant policy sections for any given claim query
 
 ### AI Analysis Engine
@@ -49,9 +49,9 @@ Preferred communication style: Simple, everyday language.
 - **Perplexity AI API**: Primary AI service for claim analysis and decision generation (requires PERPLEXITY_API_KEY environment variable)
 
 ### Machine Learning Libraries
-- **Sentence Transformers**: BAAI/bge-base-en-v1.5 model for semantic text embeddings
-- **FAISS**: Facebook's library for efficient similarity search and clustering of dense vectors
+- **Scikit-learn**: TF-IDF vectorization and cosine similarity for text search
 - **NumPy**: Numerical computing for vector operations
+- **SciPy**: Scientific computing support for similarity calculations
 
 ### Document Processing
 - **PyMuPDF (fitz)**: PDF parsing and text extraction library
