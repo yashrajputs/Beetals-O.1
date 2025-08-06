@@ -173,18 +173,10 @@ def display_analysis_interface():
                 st.rerun()
     
     with col1:
-        # Analysis options
-        st.markdown("### Analysis Options")
-        output_format = st.radio(
-            "Choose output format:",
-            ["Structured Display", "JSON Output"],
-            help="Structured Display shows results in a user-friendly format. JSON Output provides raw structured data."
-        )
-        
         # Analysis button
         valid_queries = [q for q in st.session_state.query_list if q.strip()]
         if st.button("🔍 Analyze Claims", type="primary", disabled=not valid_queries):
-            analyze_multiple_claims(valid_queries, output_format)
+            analyze_multiple_claims(valid_queries)
 
 def analyze_claim(query):
     """Analyze a single insurance claim"""
@@ -213,7 +205,7 @@ def analyze_claim(query):
         except Exception as e:
             st.error(f"❌ Error analyzing claim: {str(e)}")
 
-def analyze_multiple_claims(queries, output_format):
+def analyze_multiple_claims(queries):
     """Analyze multiple insurance claims"""
     results = []
     
@@ -243,11 +235,8 @@ def analyze_multiple_claims(queries, output_format):
                     "analysis": analysis_result
                 })
             
-            # Display results based on format choice
-            if output_format == "JSON Output":
-                display_json_results(results)
-            else:
-                display_multiple_analysis_results(results)
+            # Display results in JSON format
+            display_json_results(results)
                 
         except Exception as e:
             st.error(f"❌ Error analyzing claims: {str(e)}")
@@ -316,48 +305,6 @@ def display_analysis_results(query, relevant_clauses, analysis_result):
     
     # Reset button
     if st.button("🔄 New Analysis"):
-        st.rerun()
-
-def display_multiple_analysis_results(results):
-    """Display results for multiple claims in structured format"""
-    st.markdown("---")
-    st.header("📋 Multiple Claims Analysis Results")
-    
-    # Summary
-    st.subheader("📊 Summary")
-    total_claims = len(results)
-    approved_claims = 0
-    partial_claims = 0
-    denied_claims = 0
-    
-    for result in results:
-        analysis = result.get("analysis", "")
-        if "yes" in analysis.lower():
-            approved_claims += 1
-        elif "partial" in analysis.lower():
-            partial_claims += 1
-        elif "no" in analysis.lower():
-            denied_claims += 1
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Total Claims", total_claims)
-    with col2:
-        st.metric("Approved", approved_claims, delta=None if approved_claims == 0 else f"{approved_claims}/{total_claims}")
-    with col3:
-        st.metric("Partial", partial_claims, delta=None if partial_claims == 0 else f"{partial_claims}/{total_claims}")
-    with col4:
-        st.metric("Denied", denied_claims, delta=None if denied_claims == 0 else f"{denied_claims}/{total_claims}")
-    
-    # Individual results
-    st.subheader("🔍 Individual Claim Results")
-    
-    for i, result in enumerate(results, 1):
-        with st.expander(f"Claim {i}: {result['query'][:50]}..."):
-            display_single_result(result, i)
-    
-    # Reset button
-    if st.button("🔄 New Analysis", key="new_multiple_analysis"):
         st.rerun()
 
 def display_json_results(results):
