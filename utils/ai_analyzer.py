@@ -56,7 +56,7 @@ Be precise and reference specific clauses in your justification. If information 
     
     # Request payload
     payload = {
-        "model": "llama-3.1-sonar-small-128k-online",
+        "model": "llama-3.1-sonar-huge-128k-online",
         "messages": [
             {
                 "role": "system", 
