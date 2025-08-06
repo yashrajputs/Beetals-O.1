@@ -31,19 +31,27 @@ Relevant Policy Clauses:
 {clauses_text}
 
 Instructions:
-Using only the relevant clauses provided above, analyze this insurance claim and decide:
-1. Is this procedure/claim covered under the policy?
-2. Is it subject to any condition or restriction?
-3. What amount should be approved (if any)?
+Based on the provided policy clauses, extract and provide relevant information about this insurance claim.
 
-Return only a JSON object with the following structure:
+Return only a JSON object with the following exact structure:
 {{
-  "decision": "Yes/No/Partial",
-  "amount": "₹... or percentage or 'Not specified'", 
-  "justification": "Detailed explanation based on the policy clauses, including specific clause references"
+  "answers": [
+    "Brief statement about coverage or policy provision relevant to the query",
+    "Another relevant policy statement or coverage detail",
+    "Additional policy information that applies to this claim",
+    "Any restrictions, waiting periods, or conditions that apply",
+    "Coverage limits, percentages, or amounts if specified in the policy"
+  ]
 }}
 
-Be precise and reference specific clauses in your justification. If information is missing or unclear, state that in your justification.
+Each answer should be:
+- A direct quote or paraphrase from the policy clauses
+- Relevant to the user's query
+- Factual and specific
+- Include numerical details like percentages, amounts, or time periods when available
+- Focus on coverage, exclusions, limits, and conditions
+
+Provide 3-8 relevant answers based on the policy content.
 """
 
     # API configuration
