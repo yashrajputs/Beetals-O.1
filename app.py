@@ -331,6 +331,7 @@ def display_json_results(results):
             claim_result = {
                 "claim_id": i,
                 "query": result["query"],
+                "decision": analysis_json.get("decision", "Unknown"),
                 "answers": analysis_json.get("answers", []),
                 "relevant_clauses": [
                     {
@@ -348,6 +349,7 @@ def display_json_results(results):
             claim_result = {
                 "claim_id": i,
                 "query": result["query"],
+                "decision": "Unknown",
                 "answers": [result.get("analysis", "")],
                 "relevant_clauses": [
                     {

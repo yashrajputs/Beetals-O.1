@@ -31,10 +31,11 @@ Relevant Policy Clauses:
 {clauses_text}
 
 Instructions:
-Based on the provided policy clauses, extract and provide relevant information about this insurance claim.
+Based on the provided policy clauses, analyze if this claim is covered and provide relevant policy information.
 
 Return only a JSON object with the following exact structure:
 {{
+  "decision": "Yes/No",
   "answers": [
     "Brief statement about coverage or policy provision relevant to the query",
     "Another relevant policy statement or coverage detail",
@@ -44,12 +45,13 @@ Return only a JSON object with the following exact structure:
   ]
 }}
 
-Each answer should be:
-- A direct quote or paraphrase from the policy clauses
-- Relevant to the user's query
-- Factual and specific
-- Include numerical details like percentages, amounts, or time periods when available
-- Focus on coverage, exclusions, limits, and conditions
+- Decision should be "Yes" if the claim is covered, "No" if not covered
+- Each answer should be:
+  - A direct quote or paraphrase from the policy clauses
+  - Relevant to the user's query
+  - Factual and specific
+  - Include numerical details like percentages, amounts, or time periods when available
+  - Focus on coverage, exclusions, limits, and conditions
 
 Provide 3-8 relevant answers based on the policy content.
 """
