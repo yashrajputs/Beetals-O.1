@@ -9,7 +9,12 @@ def analyze_claim_with_ai(query: str, relevant_clauses: list[dict]) -> str:
     """
     api_key = os.getenv("PERPLEXITY_API_KEY")
     if not api_key:
-        raise ValueError("PERPLEXITY_API_KEY environment variable not found")
+        # Try Streamlit secrets as fallback
+        try:
+            import streamlit as st
+            api_key = st.secrets["PERPLEXITY_API_KEY"]
+        except (ImportError, KeyError, FileNotFoundError):
+            raise ValueError("PERPLEXITY_API_KEY not found in environment variables or Streamlit secrets")
     
     # Format relevant clauses for the prompt
     clauses_text = ""

@@ -31,8 +31,18 @@ def main():
     # API Key check
     api_key = os.getenv("PERPLEXITY_API_KEY")
     if not api_key:
-        st.error("⚠️ PERPLEXITY_API_KEY environment variable not found. Please set your API key.")
-        st.stop()
+        # Check Streamlit secrets as fallback
+        try:
+            api_key = st.secrets["PERPLEXITY_API_KEY"]
+        except (KeyError, FileNotFoundError):
+            st.error("⚠️ PERPLEXITY_API_KEY not found. Please set your API key in Streamlit Cloud secrets.")
+            st.markdown("""
+            **For Streamlit Cloud deployment:**
+            1. Go to your app settings
+            2. Click on "Secrets" in the sidebar
+            3. Add: `PERPLEXITY_API_KEY = "your_key_here"`
+            """)
+            st.stop()
     
     # Sidebar for document upload
     with st.sidebar:
