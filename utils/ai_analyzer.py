@@ -66,7 +66,7 @@ Provide 3-8 relevant answers based on the policy content.
     
     # Request payload
     payload = {
-        "model": "sonar-pro",
+        "model": "sonar",
         "messages": [
             {
                 "role": "system", 
