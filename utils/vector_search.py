@@ -20,8 +20,39 @@ except ImportError:
         # Simple mock similarity - just return random similarities
         import random
         if hasattr(b, '__len__'):
-            return [[random.random() for _ in range(len(b))]]
-        return [[random.random()]]
+            return MockSimilarityResult([random.random() for _ in range(len(b))])
+        return MockSimilarityResult([random.random()])
+    
+    class MockSimilarityResult:
+        def __init__(self, values):
+            self.values = values
+        
+        def flatten(self):
+            return MockArray(self.values)
+    
+    class MockArray:
+        def __init__(self, values):
+            self.values = values
+        
+        def argsort(self):
+            # Return indices sorted by value (descending for top-k)
+            indexed_values = [(i, v) for i, v in enumerate(self.values)]
+            indexed_values.sort(key=lambda x: x[1], reverse=True)
+            return MockArrayResult([i for i, v in indexed_values])
+        
+        def __getitem__(self, key):
+            if isinstance(key, slice):
+                return MockArray(self.values[key])
+            return self.values[key]
+    
+    class MockArrayResult:
+        def __init__(self, values):
+            self.values = values
+        
+        def __getitem__(self, key):
+            if isinstance(key, slice):
+                return self.values[key]
+            return self.values[key]
 
 try:
     import numpy as np
