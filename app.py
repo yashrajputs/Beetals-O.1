@@ -7,12 +7,16 @@ from utils.vector_search import create_vector_index, get_top_similar_clauses
 from utils.ai_analyzer import analyze_claim_with_ai
 
 # Page configuration
-st.set_page_config(
-    page_title="Insurance Claims Analysis System",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Streamlit page configuration
+try:
+    st.set_page_config(
+        page_title="Insurance Claims Analysis System",
+        page_icon="🏥",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+except Exception:
+    pass  # Handle case where page config is already set
 
 # Initialize session state
 if 'processed_document' not in st.session_state:
