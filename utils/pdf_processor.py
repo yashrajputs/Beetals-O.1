@@ -1,5 +1,10 @@
-import pymupdf
-import fitz
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    try:
+        import pymupdf as fitz
+    except ImportError:
+        raise ImportError("PyMuPDF is required. Install it with: pip install PyMuPDF")
 import re
 import uuid
 import os

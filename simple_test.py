@@ -37,6 +37,11 @@ dependencies = [
     ('requests', 'Requests')
 ]
 
+# Also test alternative import names
+alt_dependencies = [
+    ('pymupdf', 'PyMuPDF (alt name)'),
+]
+
 for module_name, display_name in dependencies:
     try:
         __import__(module_name)

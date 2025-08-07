@@ -1,5 +1,8 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+try:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+except ImportError:
+    raise ImportError("scikit-learn is required. Install it with: pip install scikit-learn")
 import numpy as np
 
 def create_vector_index(structured_clauses: list[dict]):
