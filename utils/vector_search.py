@@ -18,13 +18,24 @@ def create_vector_index_with_db(structured_clauses: List[Dict], db_manager: Data
 def get_top_similar_clauses_from_db(query: str, db_manager: DatabaseManager, 
                                    document_id: int, k: int = 5) -> List[Dict]:
     """
-    Find similar clauses using ChromaDB vector search.
+    Find similar clauses using ChromaDB vector search or fallback.
     """
-    return db_manager.search_similar_clauses(
-        document_id=document_id,
-        query=query,
-        k=k
-    )
+    try:
+        return db_manager.search_similar_clauses(
+            document_id=document_id,
+            query=query,
+            k=k
+        )
+    except Exception:
+        # Fallback to simple text search when ChromaDB is not available
+        clauses = db_manager.get_clauses_by_document_id(document_id)
+        return get_top_similar_clauses(
+            query=query,
+            indexed_data=clauses,
+            index={}, 
+            model=None,
+            k=k
+        )
 
 # Backward compatibility functions for existing code
 def create_vector_index(structured_clauses: List[Dict]):

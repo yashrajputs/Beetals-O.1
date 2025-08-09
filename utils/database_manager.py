@@ -5,9 +5,17 @@ import hashlib
 import pickle
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple, Any
-import chromadb
-from chromadb.config import Settings
 import streamlit as st
+
+# Try to import ChromaDB, use fallback if not available
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    CHROMADB_AVAILABLE = False
+    chromadb = None
+    Settings = None
 
 class DatabaseManager:
     def __init__(self, db_path: str = "insurance_claims.db", chroma_path: str = "./chroma_db"):
@@ -70,6 +78,10 @@ class DatabaseManager:
     
     def init_chromadb(self):
         """Initialize ChromaDB client"""
+        if not CHROMADB_AVAILABLE:
+            self.chroma_client = None
+            return
+            
         try:
             # Create ChromaDB client with persistent storage
             self.chroma_client = chromadb.PersistentClient(
@@ -80,8 +92,8 @@ class DatabaseManager:
                 )
             )
         except Exception as e:
-            st.error(f"Failed to initialize ChromaDB: {str(e)}")
-            raise
+            # ChromaDB not available, use fallback search silently
+            self.chroma_client = None
     
     def calculate_file_hash(self, file_content: bytes) -> str:
         """Calculate MD5 hash of file content"""
@@ -141,6 +153,17 @@ class DatabaseManager:
     def store_vector_index(self, document_id: int, structured_clauses: List[Dict], 
                           model_name: str = "default") -> str:
         """Store vector embeddings in ChromaDB"""
+        if not CHROMADB_AVAILABLE or self.chroma_client is None:
+            # Store minimal metadata in SQLite for fallback search
+            collection_name = f"doc_{document_id}_fallback"
+            cursor = self.conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO vector_metadata (document_id, collection_name, vector_count, model_name)
+                VALUES (?, ?, ?, ?)
+            ''', (document_id, collection_name, len(structured_clauses), "fallback"))
+            self.conn.commit()
+            return collection_name
+            
         try:
             # Create unique collection name
             collection_name = f"doc_{document_id}_vectors"
@@ -191,7 +214,15 @@ class DatabaseManager:
             return collection_name
             
         except Exception as e:
-            raise Exception(f"Failed to store vector index: {str(e)}")
+            # Fallback to simple metadata storage
+            collection_name = f"doc_{document_id}_fallback"
+            cursor = self.conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO vector_metadata (document_id, collection_name, vector_count, model_name)
+                VALUES (?, ?, ?, ?)
+            ''', (document_id, collection_name, len(structured_clauses), "fallback"))
+            self.conn.commit()
+            return collection_name
     
     def get_document_by_id(self, document_id: int) -> Optional[Dict]:
         """Retrieve document information by ID"""
