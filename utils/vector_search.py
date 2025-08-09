@@ -1,111 +1,66 @@
-# Mock implementation for deployment without scikit-learn
-try:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    SKLEARN_AVAILABLE = True
-except ImportError:
-    SKLEARN_AVAILABLE = False
-    # Mock classes for basic functionality
-    class MockTfidfVectorizer:
-        def __init__(self, **kwargs):
-            pass
-        def fit_transform(self, texts):
-            return texts  # Return texts as-is for mock
-        def transform(self, texts):
-            return texts
-    
-    TfidfVectorizer = MockTfidfVectorizer
-    
-    def cosine_similarity(a, b):
-        # Simple mock similarity - just return random similarities
-        import random
-        if hasattr(b, '__len__'):
-            return MockSimilarityResult([random.random() for _ in range(len(b))])
-        return MockSimilarityResult([random.random()])
-    
-    class MockSimilarityResult:
-        def __init__(self, values):
-            self.values = values
-        
-        def flatten(self):
-            return MockArray(self.values)
-    
-    class MockArray:
-        def __init__(self, values):
-            self.values = values
-        
-        def argsort(self):
-            # Return indices sorted by value (descending for top-k)
-            indexed_values = [(i, v) for i, v in enumerate(self.values)]
-            indexed_values.sort(key=lambda x: x[1], reverse=True)
-            return MockArrayResult([i for i, v in indexed_values])
-        
-        def __getitem__(self, key):
-            if isinstance(key, slice):
-                return MockArray(self.values[key])
-            return self.values[key]
-    
-    class MockArrayResult:
-        def __init__(self, values):
-            self.values = values
-        
-        def __getitem__(self, key):
-            if isinstance(key, slice):
-                return self.values[key]
-            return self.values[key]
+# Vector search with database integration using ChromaDB
+from typing import List, Dict, Optional
+from .database_manager import DatabaseManager
 
-try:
-    import numpy as np
-except ImportError:
-    # Mock numpy if not available
-    class MockNumpy:
-        def array(self, x):
-            return x
-        def argsort(self, x):
-            if isinstance(x, (list, tuple)):
-                return list(range(len(x)))
-            return [0]
-    np = MockNumpy()
-
-def create_vector_index(structured_clauses: list[dict]):
+def create_vector_index_with_db(structured_clauses: List[Dict], db_manager: DatabaseManager, 
+                               document_id: int) -> str:
     """
-    Create a TF-IDF vector index from structured clauses.
-    Returns the vectorizer and the matrix for similarity search.
+    Create and store vector index in ChromaDB.
+    Returns collection name.
     """
-    # Initialize the TF-IDF vectorizer
-    vectorizer = TfidfVectorizer(
-        max_features=1000,
-        stop_words='english',
-        ngram_range=(1, 2),
-        lowercase=True
+    collection_name = db_manager.store_vector_index(
+        document_id=document_id,
+        structured_clauses=structured_clauses,
+        model_name="chromadb_default"
     )
-    
-    # Prepare text for vectorization
-    text_to_embed = [f"{clause['title']} {clause['text']}" for clause in structured_clauses]
-    
-    # Generate TF-IDF vectors
-    tfidf_matrix = vectorizer.fit_transform(text_to_embed)
-    
-    return {'vectorizer': vectorizer, 'matrix': tfidf_matrix}, vectorizer
+    return collection_name
 
-def get_top_similar_clauses(query: str, indexed_data: list[dict], index: dict, 
-                          model, k: int = 5) -> list[dict]:
+def get_top_similar_clauses_from_db(query: str, db_manager: DatabaseManager, 
+                                   document_id: int, k: int = 5) -> List[Dict]:
     """
-    Finds and returns the top k most similar clauses using TF-IDF and cosine similarity.
+    Find similar clauses using ChromaDB vector search.
     """
-    vectorizer = index['vectorizer']
-    tfidf_matrix = index['matrix']
+    return db_manager.search_similar_clauses(
+        document_id=document_id,
+        query=query,
+        k=k
+    )
+
+# Backward compatibility functions for existing code
+def create_vector_index(structured_clauses: List[Dict]):
+    """
+    Legacy function - returns empty index for backward compatibility.
+    New code should use create_vector_index_with_db instead.
+    """
+    return {'type': 'chromadb', 'clauses': structured_clauses}, None
+
+def get_top_similar_clauses(query: str, indexed_data: List[Dict], index: Dict, 
+                          model, k: int = 5) -> List[Dict]:
+    """
+    Legacy function - returns simple text matching for backward compatibility.
+    New code should use get_top_similar_clauses_from_db instead.
+    """
+    # Simple text-based matching as fallback
+    query_lower = query.lower()
+    results = []
     
-    # Transform the query using the same vectorizer
-    query_vector = vectorizer.transform([query])
+    for clause in indexed_data:
+        text_lower = clause.get('text', '').lower()
+        title_lower = clause.get('title', '').lower()
+        
+        # Simple word matching score
+        score = 0
+        for word in query_lower.split():
+            if word in text_lower:
+                score += 1
+            if word in title_lower:
+                score += 2  # Title matches are weighted higher
+        
+        if score > 0:
+            clause_copy = clause.copy()
+            clause_copy['similarity_score'] = score / len(query_lower.split())
+            results.append(clause_copy)
     
-    # Calculate cosine similarity
-    similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
-    
-    # Get top k most similar indices
-    top_indices = similarities.argsort()[-k:][::-1]
-    
-    # Return the most similar clauses
-    results = [indexed_data[i] for i in top_indices if i < len(indexed_data)]
-    
-    return results
+    # Sort by score and return top k
+    results.sort(key=lambda x: x['similarity_score'], reverse=True)
+    return results[:k]
