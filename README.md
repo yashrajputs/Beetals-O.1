@@ -1,12 +1,16 @@
-# Insurance Claims Analysis System
+# FileStarter - Insurance Claims Analysis System
 
 An AI-powered insurance claims analysis system built with Streamlit that processes insurance policy PDF documents and provides automated coverage decisions with detailed justifications.
+
+🚀 **[Live Demo on Streamlit Cloud](https://share.streamlit.io)** (Deploy using instructions below)
 
 ## Features
 
 - **PDF Document Processing**: Upload and parse insurance policy documents
-- **Vector Search**: Intelligent search across policy clauses using TF-IDF similarity
+- **Vector Search**: Intelligent search across policy clauses using ChromaDB
 - **AI-Powered Analysis**: Uses Perplexity API to analyze claims against policy terms
+- **Session State Persistence**: Auto-restore documents from database after refresh
+- **Database Storage**: SQLite + ChromaDB for persistent document storage
 - **Structured JSON Output**: Returns decisions with Yes/No coverage determination and detailed policy statements
 - **Multiple Query Support**: Analyze multiple claims simultaneously
 - **Real-time Processing**: Interactive web interface with live results
@@ -33,8 +37,8 @@ An AI-powered insurance claims analysis system built with Streamlit that process
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yashrajputs/filestep.git
-cd filestep
+git clone https://github.com/yashrajputs/Beetals-O.1.git
+cd Beetals-O.1
 ```
 
 2. Install dependencies:
@@ -47,14 +51,34 @@ pip install streamlit pymupdf requests numpy scikit-learn
 export PERPLEXITY_API_KEY="your_perplexity_api_key_here"
 ```
 
-## Usage
+## 🚀 Deploy to Streamlit Cloud
+
+**Quick Deploy (Recommended):**
+
+1. **Go to**: https://share.streamlit.io/
+2. **Sign in** with your GitHub account  
+3. **Click "New app"**
+4. **Configure**:
+   - Repository: `yashrajputs/Beetals-O.1`
+   - Branch: `main`
+   - Main file path: `app.py`
+   - App URL: Choose your custom URL
+5. **Add secrets** in Advanced settings:
+   ```toml
+   PERPLEXITY_API_KEY = "your_actual_api_key_here"
+   ```
+6. **Click "Deploy!"**
+
+✅ **Your app will be live at**: `https://your-chosen-url.streamlit.app`
+
+## Local Usage
 
 1. Start the application:
 ```bash
-streamlit run app.py --server.port 5000
+streamlit run app.py
 ```
 
-2. Access the web interface at `http://localhost:5000`
+2. Access the web interface at `http://localhost:8501`
 
 3. Upload an insurance policy PDF document
 
