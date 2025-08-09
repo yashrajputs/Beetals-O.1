@@ -75,6 +75,11 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+insurance_claims.db
+
+# ChromaDB vector database
+chroma_db/
+*.chroma
 
 # API Keys and Secrets
 *.pem
