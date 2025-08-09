@@ -1,4 +1,28 @@
-# Deployment Guide
+# FileStarter - Deployment Guide
+
+## 🚀 Streamlit Cloud Deployment (Recommended)
+
+### Prerequisites
+- GitHub account with this repository
+- Perplexity AI API key (get from https://www.perplexity.ai/)
+
+### Quick Deploy Steps
+
+1. **Go to Streamlit Cloud**: https://share.streamlit.io/
+2. **Sign in** with your GitHub account
+3. **Click "New app"**
+4. **Configure deployment**:
+   - Repository: `yashrajputs/Beetals-O.1`
+   - Branch: `main` 
+   - Main file path: `app.py`
+   - App URL: Choose your custom URL
+5. **Add secrets** in Advanced settings:
+   ```toml
+   PERPLEXITY_API_KEY = "your_actual_api_key_here"
+   ```
+6. **Click "Deploy!"**
+
+✅ **Your app will be live at**: `https://your-chosen-url.streamlit.app`
 
 ## GitHub Setup
 
