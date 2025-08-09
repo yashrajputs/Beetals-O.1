@@ -135,22 +135,45 @@ The system returns structured JSON responses:
 - **numpy**: Numerical computing
 - **scikit-learn**: Machine learning utilities for TF-IDF
 
+## 📊 Data Storage & Session Management
+
+### Storage Architecture
+- **SQLite Database**: Persistent storage for documents and clauses
+- **ChromaDB**: Vector embeddings for semantic search (with fallback)
+- **Session State**: In-memory UI state (auto-restored from database)
+- **File Processing**: Temporary upload processing with permanent storage
+
+### Session Persistence
+- ✅ **Documents**: Auto-restored from database on refresh
+- ✅ **Search Indices**: Persistent vector storage
+- ✅ **User Data**: Survives browser refresh and server restart
+- ❌ **UI State**: Temporary (forms, selections) - resets on refresh
+
+### Data Storage Analysis
+Run the included storage analysis tool:
+```bash
+python check_data_storage.py
+```
+
 ## Technical Details
 
 ### PDF Processing
-- Uses PyMuPDF for robust PDF parsing
+- Uses PyMuPDF for robust PDF parsing with fallback support
 - Implements smart section detection for policy clauses
 - Extracts structured text with page references
+- Mock implementation available for deployment environments
 
 ### Search System
-- TF-IDF vectorization for text similarity
+- ChromaDB for advanced vector similarity (when available)
+- TF-IDF fallback for text similarity matching
 - Cosine similarity matching for relevant clause retrieval
-- Lightweight and efficient search without heavy ML libraries
+- Lightweight and efficient search without heavy ML dependencies
 
 ### AI Analysis
 - Leverages Perplexity's Sonar model for real-time analysis
 - Structured prompts for consistent JSON responses
 - Context-aware decision making based on policy content
+- Graceful error handling and fallback mechanisms
 
 ## Contributing
 
